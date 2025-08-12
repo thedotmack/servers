@@ -88,6 +88,48 @@ class SequentialThinkingServer {
 └${border}┘`;
   }
 
+  private formatUserResponse(thoughtData: ThoughtData): string {
+    const { thoughtNumber, totalThoughts, thought, isRevision, revisesThought, branchFromThought, branchId, nextThoughtNeeded } = thoughtData;
+
+    let prefix = '';
+    let context = '';
+
+    if (isRevision) {
+      prefix = '🔄 Revision';
+      context = ` (revising thought ${revisesThought})`;
+    } else if (branchFromThought) {
+      prefix = '🌿 Branch';
+      context = ` (from thought ${branchFromThought}, ID: ${branchId})`;
+    } else {
+      prefix = '💭 Thought';
+      context = '';
+    }
+
+    const header = `${prefix} ${thoughtNumber}/${totalThoughts}${context}`;
+    
+    // Create a formatted response without chalk colors for user display
+    let response = `${header}\n\n${thought}`;
+    
+    // Add progress information
+    response += `\n\n📊 Progress: ${thoughtNumber}/${totalThoughts} thoughts`;
+    if (nextThoughtNeeded) {
+      response += ` • ⏳ More thinking needed`;
+    } else {
+      response += ` • ✅ Thinking complete`;
+    }
+    
+    // Add branch information if relevant
+    const activeBranches = Object.keys(this.branches);
+    if (activeBranches.length > 0) {
+      response += `\n🌿 Active branches: ${activeBranches.join(', ')}`;
+    }
+    
+    // Add history length
+    response += `\n📝 Total thoughts recorded: ${this.thoughtHistory.length}`;
+    
+    return response;
+  }
+
   public processThought(input: unknown): { content: Array<{ type: string; text: string }>; isError?: boolean } {
     try {
       const validatedInput = this.validateThoughtData(input);
@@ -113,23 +155,14 @@ class SequentialThinkingServer {
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({
-            thoughtNumber: validatedInput.thoughtNumber,
-            totalThoughts: validatedInput.totalThoughts,
-            nextThoughtNeeded: validatedInput.nextThoughtNeeded,
-            branches: Object.keys(this.branches),
-            thoughtHistoryLength: this.thoughtHistory.length
-          }, null, 2)
+          text: this.formatUserResponse(validatedInput)
         }]
       };
     } catch (error) {
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({
-            error: error instanceof Error ? error.message : String(error),
-            status: 'failed'
-          }, null, 2)
+          text: `❌ Error in sequential thinking process\n\n${error instanceof Error ? error.message : String(error)}\n\nPlease check your input parameters and try again.`
         }],
         isError: true
       };
