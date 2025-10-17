@@ -89,13 +89,34 @@ class SequentialThinkingServer {
   }
 
   private formatResponse(thoughtData: ThoughtData): string {
-    const { thoughtNumber, totalThoughts, nextThoughtNeeded } = thoughtData;
+    const { thoughtNumber, totalThoughts, thought, nextThoughtNeeded, isRevision, revisesThought, branchFromThought, branchId } = thoughtData;
     const branches = Object.keys(this.branches);
     const historyLength = this.thoughtHistory.length;
 
-    let response = `✓ Thought ${thoughtNumber}/${totalThoughts} processed successfully
+    let response = '';
+    
+    // Add thought type indicator
+    if (isRevision) {
+      response += `🔄 Revision ${thoughtNumber}/${totalThoughts}`;
+      if (revisesThought) {
+        response += ` (revising thought ${revisesThought})`;
+      }
+      response += '\n\n';
+    } else if (branchFromThought) {
+      response += `🌿 Branch ${thoughtNumber}/${totalThoughts}`;
+      if (branchId) {
+        response += ` (from thought ${branchFromThought}, ID: ${branchId})`;
+      }
+      response += '\n\n';
+    } else {
+      response += `💭 Thought ${thoughtNumber}/${totalThoughts}\n\n`;
+    }
 
-Status: ${nextThoughtNeeded ? '→ More thinking needed' : '✓ Thinking complete'}\n`;
+    // Add the actual thought content
+    response += `${thought}\n\n`;
+
+    // Add status
+    response += `Status: ${nextThoughtNeeded ? '→ More thinking needed' : '✓ Thinking complete'}\n`;
     
     if (historyLength > 1) {
       response += `Progress: ${historyLength} thoughts recorded\n`;
