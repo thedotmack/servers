@@ -88,6 +88,26 @@ class SequentialThinkingServer {
 └${border}┘`;
   }
 
+  private formatResponse(thoughtData: ThoughtData): string {
+    const { thoughtNumber, totalThoughts, nextThoughtNeeded } = thoughtData;
+    const branches = Object.keys(this.branches);
+    const historyLength = this.thoughtHistory.length;
+
+    let response = `✓ Thought ${thoughtNumber}/${totalThoughts} processed successfully\n`;
+    response += `\n`;
+    response += `Status: ${nextThoughtNeeded ? '→ More thinking needed' : '✓ Thinking complete'}\n`;
+    
+    if (historyLength > 1) {
+      response += `Progress: ${historyLength} thoughts recorded\n`;
+    }
+    
+    if (branches.length > 0) {
+      response += `Branches: ${branches.join(', ')}\n`;
+    }
+
+    return response;
+  }
+
   public processThought(input: unknown): { content: Array<{ type: string; text: string }>; isError?: boolean } {
     try {
       const validatedInput = this.validateThoughtData(input);
@@ -113,23 +133,15 @@ class SequentialThinkingServer {
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({
-            thoughtNumber: validatedInput.thoughtNumber,
-            totalThoughts: validatedInput.totalThoughts,
-            nextThoughtNeeded: validatedInput.nextThoughtNeeded,
-            branches: Object.keys(this.branches),
-            thoughtHistoryLength: this.thoughtHistory.length
-          }, null, 2)
+          text: this.formatResponse(validatedInput)
         }]
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({
-            error: error instanceof Error ? error.message : String(error),
-            status: 'failed'
-          }, null, 2)
+          text: `✗ Error processing thought\n\n${errorMessage}`
         }],
         isError: true
       };
