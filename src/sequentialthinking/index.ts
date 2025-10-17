@@ -93,9 +93,9 @@ class SequentialThinkingServer {
     const branches = Object.keys(this.branches);
     const historyLength = this.thoughtHistory.length;
 
-    let response = `✓ Thought ${thoughtNumber}/${totalThoughts} processed successfully\n`;
-    response += `\n`;
-    response += `Status: ${nextThoughtNeeded ? '→ More thinking needed' : '✓ Thinking complete'}\n`;
+    let response = `✓ Thought ${thoughtNumber}/${totalThoughts} processed successfully
+
+Status: ${nextThoughtNeeded ? '→ More thinking needed' : '✓ Thinking complete'}\n`;
     
     if (historyLength > 1) {
       response += `Progress: ${historyLength} thoughts recorded\n`;
