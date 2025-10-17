@@ -77,8 +77,7 @@ Add this to your `claude_desktop_config.json`:
 }
 ```
 
-To disable logging of thought information set env var: `DISABLE_THOUGHT_LOGGING` to `true`.
-Comment
+Thought logging to stderr is disabled by default. To enable logging of thought information, set env var: `ENABLE_THOUGHT_LOGGING` to `true`.
 
 ### Usage with VS Code
 

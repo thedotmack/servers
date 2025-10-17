@@ -28,7 +28,8 @@ class SequentialThinkingServer {
   private disableThoughtLogging: boolean;
 
   constructor() {
-    this.disableThoughtLogging = (process.env.DISABLE_THOUGHT_LOGGING || "").toLowerCase() === "true";
+    // Thought logging is now disabled by default. Set ENABLE_THOUGHT_LOGGING=true to enable it.
+    this.disableThoughtLogging = (process.env.ENABLE_THOUGHT_LOGGING || "").toLowerCase() !== "true";
   }
 
   private validateThoughtData(input: unknown): ThoughtData {
