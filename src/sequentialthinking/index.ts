@@ -28,7 +28,8 @@ class SequentialThinkingServer {
   private disableThoughtLogging: boolean;
 
   constructor() {
-    this.disableThoughtLogging = (process.env.DISABLE_THOUGHT_LOGGING || "").toLowerCase() === "true";
+    // Thought logging is now disabled by default. Set ENABLE_THOUGHT_LOGGING=true to enable it.
+    this.disableThoughtLogging = (process.env.ENABLE_THOUGHT_LOGGING || "").toLowerCase() !== "true";
   }
 
   private validateThoughtData(input: unknown): ThoughtData {
@@ -88,6 +89,47 @@ class SequentialThinkingServer {
 └${border}┘`;
   }
 
+  private formatResponse(thoughtData: ThoughtData): string {
+    const { thoughtNumber, totalThoughts, thought, nextThoughtNeeded, isRevision, revisesThought, branchFromThought, branchId } = thoughtData;
+    const branches = Object.keys(this.branches);
+    const historyLength = this.thoughtHistory.length;
+
+    let response = '';
+    
+    // Add thought type indicator
+    if (isRevision) {
+      response += `🔄 Revision ${thoughtNumber}/${totalThoughts}`;
+      if (revisesThought) {
+        response += ` (revising thought ${revisesThought})`;
+      }
+      response += '\n\n';
+    } else if (branchFromThought) {
+      response += `🌿 Branch ${thoughtNumber}/${totalThoughts}`;
+      if (branchId) {
+        response += ` (from thought ${branchFromThought}, ID: ${branchId})`;
+      }
+      response += '\n\n';
+    } else {
+      response += `💭 Thought ${thoughtNumber}/${totalThoughts}\n\n`;
+    }
+
+    // Add the actual thought content
+    response += `${thought}\n\n`;
+
+    // Add status
+    response += `Status: ${nextThoughtNeeded ? '→ More thinking needed' : '✓ Thinking complete'}\n`;
+    
+    if (historyLength > 1) {
+      response += `Progress: ${historyLength} thoughts recorded\n`;
+    }
+    
+    if (branches.length > 0) {
+      response += `Branches: ${branches.join(', ')}\n`;
+    }
+
+    return response;
+  }
+
   public processThought(input: unknown): { content: Array<{ type: string; text: string }>; isError?: boolean } {
     try {
       const validatedInput = this.validateThoughtData(input);
@@ -113,23 +155,15 @@ class SequentialThinkingServer {
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({
-            thoughtNumber: validatedInput.thoughtNumber,
-            totalThoughts: validatedInput.totalThoughts,
-            nextThoughtNeeded: validatedInput.nextThoughtNeeded,
-            branches: Object.keys(this.branches),
-            thoughtHistoryLength: this.thoughtHistory.length
-          }, null, 2)
+          text: this.formatResponse(validatedInput)
         }]
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({
-            error: error instanceof Error ? error.message : String(error),
-            status: 'failed'
-          }, null, 2)
+          text: `✗ Error processing thought\n\n${errorMessage}`
         }],
         isError: true
       };
